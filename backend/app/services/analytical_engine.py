@@ -5,7 +5,7 @@ safely executes them, formats data, computes derived metrics, and generates
 clear natural-language business explanations and chart metadata.
 """
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Tuple
 from ..database.db import execute_query
 from ..semantic.registry import METRIC_DEFINITIONS, DIMENSION_DEFINITIONS, format_metric_value
@@ -17,6 +17,7 @@ from .query_planner import QueryPlan
 def build_sql_from_plan(plan: QueryPlan) -> Tuple[str, Dict[str, Any], List[str]]:
     """
     Constructs a safe, parameterized SQL statement using approved metrics and dimensions.
+    Supports single values, multiple values (IN clause), and complex filters.
     """
     select_clauses: List[str] = []
     metric_defs: List[str] = []
@@ -52,6 +53,12 @@ def build_sql_from_plan(plan: QueryPlan) -> Tuple[str, Dict[str, Any], List[str]
         elif metric_name == "order_count":
             select_clauses.append("COUNT(order_id) AS order_count")
             metric_defs.append("Order Count = COUNT(order_id)")
+        elif metric_name == "avg_order_value":
+            select_clauses.append("ROUND(SUM(revenue) / NULLIF(COUNT(order_id), 0.0), 2) AS avg_order_value")
+            metric_defs.append("Average Order Value = SUM(revenue) / COUNT(order_id)")
+        elif metric_name == "discount_pct" or metric_name == "avg_discount":
+            select_clauses.append("ROUND(AVG(discount_pct) * 100.0, 2) AS discount_pct")
+            metric_defs.append("Average Discount (%) = AVG(discount_pct) * 100")
 
     select_str = ", ".join(select_clauses) if select_clauses else "COUNT(*) AS total_records"
     
@@ -62,8 +69,16 @@ def build_sql_from_plan(plan: QueryPlan) -> Tuple[str, Dict[str, Any], List[str]
     if plan.filters:
         for key, val in plan.filters.items():
             param_key = f"param_{key}"
-            where_clauses.append(f"{key} = :{param_key}")
-            params[param_key] = val
+            if isinstance(val, (list, tuple, set)):
+                in_placeholders = []
+                for i, v in enumerate(val):
+                    p_name = f"{param_key}_{i}"
+                    in_placeholders.append(f":{p_name}")
+                    params[p_name] = v
+                where_clauses.append(f"{key} IN ({', '.join(in_placeholders)})")
+            else:
+                where_clauses.append(f"{key} = :{param_key}")
+                params[param_key] = val
             
     where_str = (" WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
     
@@ -92,6 +107,56 @@ def execute_analytical_plan(plan: QueryPlan, question: str) -> ChatResponse:
     Executes the analytical plan against SQLite and formats the complete ChatResponse.
     """
     start_time = time.perf_counter()
+
+    # Handle out-of-scope non-analytics questions honestly without fake answers
+    if plan.intent == "unsupported":
+        unsupported_msg = (
+            "MetricMind is an enterprise Agentic Semantic BI Engine configured for corporate transactional analytics "
+            "(revenue, profit, unit volumes, order status, product catalog, customer segments, and geographical performance across 2025).\n\n"
+            "The question you entered appears to be outside this business dataset. Here are some questions you can ask right now:\n\n"
+            "• *\"What is the total revenue and profit?\"*\n"
+            "• *\"What is the revenue and profit in United States?\"*\n"
+            "• *\"Show revenue and profit by country\"*\n"
+            "• *\"Quarterly revenue trend for 2025\"*\n"
+            "• *\"Compare USA and Germany\"*\n"
+            "• *\"Top 5 products by profit margin\"*\n"
+            "• *\"Revenue by sales channel\"*\n"
+            "• *\"Why did revenue decrease in August?\"*"
+        )
+        dummy_sql = SqlTrace(
+            sql="-- Out of scope: No SQL generated for non-analytics question",
+            params={},
+            metric_definitions=[],
+            execution_engine="N/A",
+            rows_returned=0,
+            is_preview=False
+        )
+        dummy_api = ApiTrace(
+            endpoint="/api/chat",
+            method="POST",
+            request_payload={"question": question},
+            status_code=200,
+            execution_time_ms=0.0
+        )
+        return ChatResponse(
+            question=question,
+            explanation=unsupported_msg,
+            answer=unsupported_msg,
+            response=unsupported_msg,
+            message=unsupported_msg,
+            data=[],
+            results=[],
+            sql="-- No SQL generated: question is outside the scope of business analytics",
+            generated_sql="-- No SQL generated: question is outside the scope of business analytics",
+            chart=None,
+            chart_meta=None,
+            kpi_items=[],
+            sql_trace=dummy_sql,
+            api_trace=dummy_api,
+            secondary_breakdown=None,
+            query_plan=plan.to_dict(),
+        )
+
     sql, params, metric_defs = build_sql_from_plan(plan)
     
     # Safe execution
@@ -111,23 +176,24 @@ def execute_analytical_plan(plan: QueryPlan, question: str) -> ChatResponse:
         FROM v_orders_enriched
         WHERE order_status = 'Completed'
         GROUP BY {sec_dim}
-        ORDER BY revenue DESC;
+        ORDER BY revenue DESC
+        LIMIT 5;
         """
         sec_rows = execute_query(sec_sql)
         secondary = SecondaryBreakdown(
             dimension=sec_dim,
-            title=f"Secondary Breakdown by {sec_dim.replace('_', ' ').title()}",
-            data=sec_rows,
-            explanation=f"Investigation into distribution across {sec_dim.replace('_', ' ')} based on verified completed orders."
+            title=f"Secondary Investigation: {sec_dim.title()} Breakdown",
+            explanation=f"Revenue and margin contribution by {sec_dim} during the analyzed timeframe.",
+            data=sec_rows
         )
 
-    # Generate natural language explanation and KPI items
+    # Generate insights and KPI items
     explanation, kpis = generate_business_insight(plan, rows, secondary)
-    
-    # Build chart metadata
-    chart_meta = None
-    if plan.chart_type != "kpi" and len(rows) > 0:
-        x_key = plan.dimensions[0] if plan.dimensions else None
+
+    # Format ChartMeta
+    chart_meta: ChartMeta | None = None
+    if plan.chart_type != "kpi" and plan.dimensions and rows:
+        x_key = plan.dimensions[0]
         y_keys = [m for m in plan.metrics if m != "order_count"] or plan.metrics
         chart_meta = ChartMeta(
             chart_type=plan.chart_type,  # type: ignore
@@ -162,11 +228,10 @@ def execute_analytical_plan(plan: QueryPlan, question: str) -> ChatResponse:
         request_payload={"question": question, "plan": plan.to_dict()},
         status_code=200,
         execution_time_ms=exec_time_ms,
-        timestamp=datetime.utcnow().isoformat() + "Z",
+        timestamp=datetime.now(timezone.utc).isoformat(),
         sanitized=True
     )
 
-    # Map chart to analyticsUtils.ts ChartMeta format: { type: ..., xKey: ..., yKeys: ..., title: ... }
     chart_alias = None
     if chart_meta:
         chart_alias = {
@@ -201,23 +266,56 @@ def generate_business_insight(
     secondary: SecondaryBreakdown | None = None
 ) -> Tuple[str, List[KpiItem]]:
     """
-    Produces concise, factual natural language narrative and KPI cards.
+    Produces concise, factual natural language narrative and KPI cards based on the actual query results.
     """
     kpis: List[KpiItem] = []
     
     if not rows:
-        return "No matching completed records were found in the dataset for this query.", []
+        filter_desc = ", ".join(f"{k}: {v}" for k, v in plan.filters.items()) if plan.filters else "specified filters"
+        return f"No matching completed records were found in the dataset for {filter_desc}.", []
 
-    # KPI summary mode (1 row, no dimensions)
+    # 1. Comparison Intent (e.g., Comparing USA vs Germany, or Online vs Retail)
+    if plan.intent == "comparison" and len(rows) >= 2:
+        dim = plan.dimensions[0]
+        comp_lines: List[str] = []
+        for r in rows:
+            name = str(r.get(dim, "Unknown"))
+            rev = r.get("revenue", 0)
+            prof = r.get("profit", 0)
+            margin = r.get("profit_margin", 0)
+            fmt_rev = format_metric_value(rev, "currency")
+            fmt_prof = format_metric_value(prof, "currency")
+            fmt_margin = format_metric_value(margin, "percentage")
+            comp_lines.append(f"• **{name}**: Revenue of **{fmt_rev}**, Profit of **{fmt_prof}** (Margin: {fmt_margin})")
+            kpis.append(KpiItem(
+                label=f"{name} Revenue",
+                value=rev,
+                formatted_value=fmt_rev,
+                formattedValue=fmt_rev,
+                description=f"Profit: {fmt_prof} ({fmt_margin} margin)"
+            ))
+        explanation = f"Comparative performance analysis across **{dim.replace('_', ' ').title()}**:\n\n" + "\n".join(comp_lines)
+        return explanation, kpis
+
+    # 2. KPI Summary Mode (1 row, no dimensions) - overall or single filtered entity (e.g. USA or Laptop Pro 14)
     if plan.intent == "kpi_summary" or (not plan.dimensions and len(rows) == 1):
         row = rows[0]
         narratives = []
         
+        # Check if single entity was filtered
+        entity_name = ""
+        for fk, fv in plan.filters.items():
+            if fk != "order_status" and isinstance(fv, str):
+                entity_name = fv
+                break
+
+        prefix = f"In **{entity_name}**, " if entity_name else "Based on authoritative analysis of the 2025 dataset, "
+
         if "revenue" in row:
             rev_val = row["revenue"]
             fmt_rev = format_metric_value(rev_val, "currency")
             kpis.append(KpiItem(
-                label="Total Revenue",
+                label=f"{entity_name} Revenue" if entity_name else "Total Revenue",
                 value=rev_val,
                 formatted_value=fmt_rev,
                 formattedValue=fmt_rev,
@@ -229,7 +327,7 @@ def generate_business_insight(
             profit_val = row["profit"]
             fmt_profit = format_metric_value(profit_val, "currency")
             kpis.append(KpiItem(
-                label="Total Profit",
+                label=f"{entity_name} Profit" if entity_name else "Total Profit",
                 value=profit_val,
                 formatted_value=fmt_profit,
                 formattedValue=fmt_profit,
@@ -261,10 +359,21 @@ def generate_business_insight(
             ))
             narratives.append(f"totaling **{fmt_qty} units** sold")
 
-        explanation = f"Based on authoritative analysis of the 2025 dataset, {', '.join(narratives)} across completed orders."
+        if "order_count" in row:
+            ord_val = row["order_count"]
+            fmt_ord = format_metric_value(ord_val, "integer")
+            kpis.append(KpiItem(
+                label="Completed Orders",
+                value=ord_val,
+                formatted_value=fmt_ord,
+                formattedValue=fmt_ord,
+                description="Completed transaction volume"
+            ))
+
+        explanation = f"{prefix}{', '.join(narratives)} across completed orders."
         return explanation, kpis
 
-    # Root Cause / Trend Analysis
+    # 3. Root Cause / Trend Analysis
     if plan.intent == "root_cause_investigation":
         first_month = rows[0]
         last_month = rows[-1]
@@ -286,43 +395,44 @@ def generate_business_insight(
             )
         return explanation, kpis
 
-    # Time series mode (monthly trends)
+    # 4. Time series mode (monthly or quarterly trends)
     if plan.intent == "time_series":
+        dim = plan.dimensions[0]
         total_rev = sum(r.get("revenue", 0) for r in rows)
         fmt_total = format_metric_value(total_rev, "currency")
-        peak_month = max(rows, key=lambda r: r.get("revenue", 0))
-        peak_val = format_metric_value(peak_month.get("revenue", 0), "currency")
+        peak_row = max(rows, key=lambda r: r.get("revenue", 0))
+        peak_period = peak_row.get(dim)
+        peak_val = format_metric_value(peak_row.get("revenue", 0), "currency")
         
         kpis.append(KpiItem(
-            label="Peak Month",
-            value=peak_month.get("month_name"),
-            formatted_value=str(peak_month.get("month_name")),
-            formattedValue=str(peak_month.get("month_name")),
-            description=f"Highest revenue month at {peak_val}"
+            label=f"Peak {dim.replace('_', ' ').title()}",
+            value=peak_period,
+            formatted_value=str(peak_period),
+            formattedValue=str(peak_period),
+            description=f"Highest revenue period at {peak_val}"
         ))
         kpis.append(KpiItem(
-            label="2025 Annual Revenue",
+            label="Total Analyzed Revenue",
             value=total_rev,
             formatted_value=fmt_total,
             formattedValue=fmt_total,
-            description="Sum of all completed monthly revenue in 2025"
+            description="Combined revenue across the selected timeframe"
         ))
         explanation = (
-            f"Monthly revenue across 2025 totaled **{fmt_total}**. "
-            f"Peak performance occurred in **{peak_month.get('month_name')}** generating **{peak_val}**."
+            f"Total revenue across {len(rows)} {dim.replace('_', ' ')} periods reached **{fmt_total}**. "
+            f"Peak performance occurred in **{peak_period}** generating **{peak_val}**."
         )
         return explanation, kpis
 
-    # Ranking mode (e.g., top country, top product)
+    # 5. Ranking mode (e.g., top country, top product)
     if plan.intent == "ranking":
         dim = plan.dimensions[0]
         top_row = rows[0]
         top_name = top_row.get(dim, "Unknown")
         top_metric = plan.order_by or plan.metrics[0]
         metric_val = top_row.get(top_metric, 0)
-        fmt_val = format_metric_value(metric_val, "currency" if "profit" in top_metric or "revenue" in top_metric else "integer")
+        fmt_val = format_metric_value(metric_val, "percentage" if "margin" in top_metric else ("currency" if "profit" in top_metric or "revenue" in top_metric else "integer"))
         
-        # Build Top 1 KPI
         kpis.append(KpiItem(
             label=f"Top {dim.replace('_', ' ').title()}",
             value=top_name,
@@ -335,12 +445,33 @@ def generate_business_insight(
         if len(rows) > 1:
             second_row = rows[1]
             sec_name = second_row.get(dim, "Unknown")
-            sec_val = format_metric_value(second_row.get(top_metric, 0), "currency" if "profit" in top_metric or "revenue" in top_metric else "integer")
+            sec_val = format_metric_value(second_row.get(top_metric, 0), "percentage" if "margin" in top_metric else ("currency" if "profit" in top_metric or "revenue" in top_metric else "integer"))
             explanation += f" It is followed by **{sec_name}** at **{sec_val}**."
         return explanation, kpis
+
+    # 6. Distribution mode (Donut / Pie: channels, categories, segments)
+    if plan.intent == "distribution":
+        dim = plan.dimensions[0]
+        total_val = sum(r.get(plan.metrics[0], 0) for r in rows)
+        fmt_total = format_metric_value(total_val, "currency" if "revenue" in plan.metrics[0] or "profit" in plan.metrics[0] else "integer")
+        top_row = rows[0]
+        top_name = top_row.get(dim, "Unknown")
+        top_val = format_metric_value(top_row.get(plan.metrics[0], 0), "currency" if "revenue" in plan.metrics[0] or "profit" in plan.metrics[0] else "integer")
+        
+        kpis.append(KpiItem(
+            label=f"Leading {dim.replace('_', ' ').title()}",
+            value=top_name,
+            formatted_value=str(top_name),
+            formattedValue=str(top_name),
+            description=f"{top_val} ({top_row.get(plan.metrics[0], 0) / max(total_val, 1) * 100:.1f}% share)"
+        ))
+        explanation = (
+            f"Distribution across {len(rows)} {dim.replace('_', ' ')} segments represents a combined **{fmt_total}** in {plan.metrics[0].replace('_', ' ')}. "
+            f"**{top_name}** accounts for the largest share at **{top_val}**."
+        )
         return explanation, kpis
 
-    # Time series or Dimension breakdown general
+    # 7. Dimension breakdown general
     dim = plan.dimensions[0]
     total_val = sum(r.get(plan.metrics[0], 0) for r in rows)
     fmt_total = format_metric_value(total_val, "currency" if "revenue" in plan.metrics[0] or "profit" in plan.metrics[0] else "integer")

@@ -112,6 +112,8 @@ export default function MetricMindApp() {
     }
   }, [messages, activeTab]);
 
+  const [conversationId, setConversationId] = useState<string>(() => `conv-${Date.now()}`);
+
   const handleSendQuestion = async (textToSend?: string) => {
     const question = (textToSend || inputValue).trim();
     if (!question || loading) return;
@@ -137,14 +139,14 @@ export default function MetricMindApp() {
       let res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({ question, conversation_id: conversationId }),
       });
 
       if (!res.ok && res.status === 404) {
         res = await fetch(`${API_BASE_URL}/api/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question }),
+          body: JSON.stringify({ question, conversation_id: conversationId }),
         });
       }
 
@@ -193,6 +195,7 @@ export default function MetricMindApp() {
 
   const handleNewChat = () => {
     setMessages([]);
+    setConversationId(`conv-${Date.now()}`);
     setActiveTab("chat");
   };
 

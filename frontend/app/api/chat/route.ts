@@ -43,7 +43,10 @@ export async function POST(request: Request) {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({
+          question,
+          conversation_id: body?.conversation_id,
+        }),
         signal: controller.signal,
       });
     } catch (fetchErr: unknown) {

@@ -1,5 +1,6 @@
 export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8001";
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  "https://metricmind-backend-6qdz.onrender.com";
 
 export const API_CHAT_URL =
   process.env.METRICMIND_API_URL ||

@@ -123,6 +123,12 @@ def inspect_and_load_dataset(force: bool = False) -> DatasetOverview:
         o.order_date,
         strftime('%Y-%m', o.order_date) AS month_name,
         strftime('%Y', o.order_date) AS order_year,
+        CASE 
+            WHEN CAST(strftime('%m', o.order_date) AS INT) BETWEEN 1 AND 3 THEN strftime('%Y', o.order_date) || '-Q1'
+            WHEN CAST(strftime('%m', o.order_date) AS INT) BETWEEN 4 AND 6 THEN strftime('%Y', o.order_date) || '-Q2'
+            WHEN CAST(strftime('%m', o.order_date) AS INT) BETWEEN 7 AND 9 THEN strftime('%Y', o.order_date) || '-Q3'
+            ELSE strftime('%Y', o.order_date) || '-Q4'
+        END AS quarter,
         o.customer_id,
         c.customer_name,
         c.segment,

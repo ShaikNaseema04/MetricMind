@@ -11,13 +11,13 @@ from .analytical_engine import execute_analytical_plan
 
 logger = logging.getLogger(__name__)
 
-def process_chat_question(question: str) -> ChatResponse:
+def process_chat_question(question: str, conversation_id: str | None = None) -> ChatResponse:
     """
     Main entry point for business question analysis.
     Executes controlled semantic query planning and analytical execution.
     """
     # 1. Plan query deterministically against semantic registry
-    plan = plan_query(question)
+    plan = plan_query(question, conversation_id=conversation_id)
     
     # 2. Execute approved analytical plan against real dataset in SQLite
     response = execute_analytical_plan(plan, question)

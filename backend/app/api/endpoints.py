@@ -40,7 +40,7 @@ def chat_question(request: ChatRequest):
     if not question:
         raise HTTPException(status_code=400, detail="Question cannot be empty.")
     try:
-        response = process_chat_question(question)
+        response = process_chat_question(question, conversation_id=request.conversation_id)
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Analytical processing error: {str(e)}")

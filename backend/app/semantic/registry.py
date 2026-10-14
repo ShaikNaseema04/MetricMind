@@ -113,9 +113,23 @@ DIMENSION_DEFINITIONS: Dict[str, DimensionDefinition] = {
     "month_name": DimensionDefinition(
         name="month_name",
         display_name="Month",
-        source_column="strftime('%Y-%m', order_date)",
+        source_column="month_name",
         data_type="string",
         description="Calendar month for time-series trend analysis (YYYY-MM)."
+    ),
+    "quarter": DimensionDefinition(
+        name="quarter",
+        display_name="Quarter",
+        source_column="quarter",
+        data_type="string",
+        description="Calendar quarter for periodic trend analysis (e.g., 2025-Q1, 2025-Q2)."
+    ),
+    "order_year": DimensionDefinition(
+        name="order_year",
+        display_name="Year",
+        source_column="order_year",
+        data_type="string",
+        description="Transaction calendar year."
     ),
     "sales_channel": DimensionDefinition(
         name="sales_channel",
@@ -123,6 +137,20 @@ DIMENSION_DEFINITIONS: Dict[str, DimensionDefinition] = {
         source_column="sales_channel",
         data_type="string",
         description="Distribution channel (Online, Partner, Retail)."
+    ),
+    "segment": DimensionDefinition(
+        name="segment",
+        display_name="Customer Segment",
+        source_column="segment",
+        data_type="string",
+        description="Customer demographic segment (Consumer, Corporate, Small Business)."
+    ),
+    "customer_name": DimensionDefinition(
+        name="customer_name",
+        display_name="Customer Name",
+        source_column="customer_name",
+        data_type="string",
+        description="Authorized customer name."
     ),
     "order_status": DimensionDefinition(
         name="order_status",
