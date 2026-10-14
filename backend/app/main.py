@@ -63,6 +63,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Root endpoint
+@app.get("/")
+def root():
+    return {
+        "status": "online",
+        "app": settings.PROJECT_NAME,
+        "version": settings.VERSION,
+        "docs": "/docs",
+        "health": "/health",
+        "api_prefix": settings.API_PREFIX
+    }
+
 # Health endpoint
 @app.get("/health")
 def health_check():

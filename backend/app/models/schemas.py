@@ -2,9 +2,21 @@ from typing import List, Dict, Any, Optional, Literal
 from pydantic import BaseModel, Field
 
 class ChatRequest(BaseModel):
-    question: str
-    conversation_id: Optional[str] = None
-    filters: Optional[Dict[str, Any]] = None
+    question: str = Field(
+        ...,
+        description="Natural language business intelligence question",
+        examples=["What is the total revenue and profit?"]
+    )
+    conversation_id: Optional[str] = Field(None, examples=["conv-1"])
+    filters: Optional[Dict[str, Any]] = Field(default=None, examples=[{}])
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "question": "What is the total revenue and profit?"
+            }
+        }
+    }
 
 class ChartMeta(BaseModel):
     chart_type: Literal["bar", "line", "donut", "horizontal_bar", "table", "kpi"]
