@@ -1,0 +1,415 @@
+{
+  "source_directory": "C:\\Users\\VENKATA BALAJI\\Downloads\\MetricMind_Raw_Dataset",
+  "is_source_accessible": true,
+  "total_files": 5,
+  "files": [
+    {
+      "filename": "costs_raw.csv",
+      "path": "C:\\Users\\VENKATA BALAJI\\Downloads\\MetricMind_Raw_Dataset\\costs_raw.csv",
+      "row_count": 10000,
+      "column_count": 8,
+      "columns": [
+        "order_id",
+        "order_date",
+        "region",
+        "product_id",
+        "material_cost",
+        "shipping_cost",
+        "other_operational_cost",
+        "total_cost"
+      ],
+      "dtypes": {
+        "order_id": "object",
+        "order_date": "object",
+        "region": "object",
+        "product_id": "object",
+        "material_cost": "int64",
+        "shipping_cost": "float64",
+        "other_operational_cost": "float64",
+        "total_cost": "float64"
+      },
+      "missing_values": {
+        "order_id": 0,
+        "order_date": 0,
+        "region": 0,
+        "product_id": 0,
+        "material_cost": 0,
+        "shipping_cost": 0,
+        "other_operational_cost": 0,
+        "total_cost": 0
+      },
+      "sample_records": [
+        {
+          "order_id": "O000065",
+          "order_date": "2025-01-01",
+          "region": "North America",
+          "product_id": "P007",
+          "material_cost": 10500,
+          "shipping_cost": 1946.86,
+          "other_operational_cost": 578.12,
+          "total_cost": 13024.98
+        },
+        {
+          "order_id": "O008011",
+          "order_date": "2025-01-01",
+          "region": "North America",
+          "product_id": "P003",
+          "material_cost": 114000,
+          "shipping_cost": 1558.45,
+          "other_operational_cost": 2355.06,
+          "total_cost": 117913.51
+        },
+        {
+          "order_id": "O003335",
+          "order_date": "2025-01-01",
+          "region": "Asia",
+          "product_id": "P010",
+          "material_cost": 72500,
+          "shipping_cost": 715.83,
+          "other_operational_cost": 4870.39,
+          "total_cost": 78086.22
+        }
+      ]
+    },
+    {
+      "filename": "customers_raw.csv",
+      "path": "C:\\Users\\VENKATA BALAJI\\Downloads\\MetricMind_Raw_Dataset\\customers_raw.csv",
+      "row_count": 500,
+      "column_count": 5,
+      "columns": [
+        "customer_id",
+        "customer_name",
+        "country",
+        "region",
+        "segment"
+      ],
+      "dtypes": {
+        "customer_id": "object",
+        "customer_name": "object",
+        "country": "object",
+        "region": "object",
+        "segment": "object"
+      },
+      "missing_values": {
+        "customer_id": 0,
+        "customer_name": 0,
+        "country": 0,
+        "region": 0,
+        "segment": 0
+      },
+      "sample_records": [
+        {
+          "customer_id": "C0001",
+          "customer_name": "Customer 1",
+          "country": "Australia",
+          "region": "Oceania",
+          "segment": "Consumer"
+        },
+        {
+          "customer_id": "C0002",
+          "customer_name": "Customer 2",
+          "country": "UK",
+          "region": "Europe",
+          "segment": "Consumer"
+        },
+        {
+          "customer_id": "C0003",
+          "customer_name": "Customer 3",
+          "country": "USA",
+          "region": "North America",
+          "segment": "Small Business"
+        }
+      ]
+    },
+    {
+      "filename": "date_dimension_raw.csv",
+      "path": "C:\\Users\\VENKATA BALAJI\\Downloads\\MetricMind_Raw_Dataset\\date_dimension_raw.csv",
+      "row_count": 365,
+      "column_count": 7,
+      "columns": [
+        "date",
+        "year",
+        "quarter",
+        "month",
+        "month_name",
+        "week",
+        "day"
+      ],
+      "dtypes": {
+        "date": "object",
+        "year": "int64",
+        "quarter": "object",
+        "month": "int64",
+        "month_name": "object",
+        "week": "int64",
+        "day": "int64"
+      },
+      "missing_values": {
+        "date": 0,
+        "year": 0,
+        "quarter": 0,
+        "month": 0,
+        "month_name": 0,
+        "week": 0,
+        "day": 0
+      },
+      "sample_records": [
+        {
+          "date": "2025-01-01",
+          "year": 2025,
+          "quarter": "Q1",
+          "month": 1,
+          "month_name": "January",
+          "week": 1,
+          "day": 1
+        },
+        {
+          "date": "2025-01-02",
+          "year": 2025,
+          "quarter": "Q1",
+          "month": 1,
+          "month_name": "January",
+          "week": 1,
+          "day": 2
+        },
+        {
+          "date": "2025-01-03",
+          "year": 2025,
+          "quarter": "Q1",
+          "month": 1,
+          "month_name": "January",
+          "week": 1,
+          "day": 3
+        }
+      ]
+    },
+    {
+      "filename": "orders_raw.csv",
+      "path": "C:\\Users\\VENKATA BALAJI\\Downloads\\MetricMind_Raw_Dataset\\orders_raw.csv",
+      "row_count": 10000,
+      "column_count": 18,
+      "columns": [
+        "order_id",
+        "order_date",
+        "customer_id",
+        "product_id",
+        "country",
+        "region",
+        "quantity",
+        "sales_channel",
+        "order_status",
+        "discount_pct",
+        "gross_revenue",
+        "discount_amount",
+        "revenue",
+        "product_cost",
+        "shipping_cost",
+        "total_cost",
+        "profit",
+        "margin_pct"
+      ],
+      "dtypes": {
+        "order_id": "object",
+        "order_date": "object",
+        "customer_id": "object",
+        "product_id": "object",
+        "country": "object",
+        "region": "object",
+        "quantity": "int64",
+        "sales_channel": "object",
+        "order_status": "object",
+        "discount_pct": "float64",
+        "gross_revenue": "int64",
+        "discount_amount": "float64",
+        "revenue": "float64",
+        "product_cost": "int64",
+        "shipping_cost": "float64",
+        "total_cost": "float64",
+        "profit": "float64",
+        "margin_pct": "float64"
+      },
+      "missing_values": {
+        "order_id": 0,
+        "order_date": 0,
+        "customer_id": 0,
+        "product_id": 0,
+        "country": 0,
+        "region": 0,
+        "quantity": 0,
+        "sales_channel": 0,
+        "order_status": 0,
+        "discount_pct": 0,
+        "gross_revenue": 0,
+        "discount_amount": 0,
+        "revenue": 0,
+        "product_cost": 0,
+        "shipping_cost": 0,
+        "total_cost": 0,
+        "profit": 0,
+        "margin_pct": 0
+      },
+      "sample_records": [
+        {
+          "order_id": "O000065",
+          "order_date": "2025-01-01",
+          "customer_id": "C0283",
+          "product_id": "P007",
+          "country": "Canada",
+          "region": "North America",
+          "quantity": 1,
+          "sales_channel": "Partner",
+          "order_status": "Completed",
+          "discount_pct": 0.05,
+          "gross_revenue": 18000,
+          "discount_amount": 900.0,
+          "revenue": 17100.0,
+          "product_cost": 10500,
+          "shipping_cost": 1946.86,
+          "total_cost": 12446.86,
+          "profit": 4653.14,
+          "margin_pct": 27.21
+        },
+        {
+          "order_id": "O008011",
+          "order_date": "2025-01-01",
+          "customer_id": "C0413",
+          "product_id": "P003",
+          "country": "Canada",
+          "region": "North America",
+          "quantity": 3,
+          "sales_channel": "Online",
+          "order_status": "Completed",
+          "discount_pct": 0.1,
+          "gross_revenue": 165000,
+          "discount_amount": 16500.0,
+          "revenue": 148500.0,
+          "product_cost": 114000,
+          "shipping_cost": 1558.45,
+          "total_cost": 115558.45,
+          "profit": 32941.55,
+          "margin_pct": 22.18
+        },
+        {
+          "order_id": "O003335",
+          "order_date": "2025-01-01",
+          "customer_id": "C0397",
+          "product_id": "P010",
+          "country": "Japan",
+          "region": "Asia",
+          "quantity": 5,
+          "sales_channel": "Online",
+          "order_status": "Cancelled",
+          "discount_pct": 0.05,
+          "gross_revenue": 110000,
+          "discount_amount": 5500.0,
+          "revenue": 104500.0,
+          "product_cost": 72500,
+          "shipping_cost": 715.83,
+          "total_cost": 73215.83,
+          "profit": 31284.17,
+          "margin_pct": 29.94
+        }
+      ]
+    },
+    {
+      "filename": "products_raw.csv",
+      "path": "C:\\Users\\VENKATA BALAJI\\Downloads\\MetricMind_Raw_Dataset\\products_raw.csv",
+      "row_count": 12,
+      "column_count": 5,
+      "columns": [
+        "product_id",
+        "product_name",
+        "category",
+        "unit_price",
+        "unit_cost"
+      ],
+      "dtypes": {
+        "product_id": "object",
+        "product_name": "object",
+        "category": "object",
+        "unit_price": "int64",
+        "unit_cost": "int64"
+      },
+      "missing_values": {
+        "product_id": 0,
+        "product_name": 0,
+        "category": 0,
+        "unit_price": 0,
+        "unit_cost": 0
+      },
+      "sample_records": [
+        {
+          "product_id": "P001",
+          "product_name": "Laptop Pro 14",
+          "category": "Electronics",
+          "unit_price": 90000,
+          "unit_cost": 65000
+        },
+        {
+          "product_id": "P002",
+          "product_name": "Laptop Air 13",
+          "category": "Electronics",
+          "unit_price": 70000,
+          "unit_cost": 50000
+        },
+        {
+          "product_id": "P003",
+          "product_name": "Smartphone X",
+          "category": "Electronics",
+          "unit_price": 55000,
+          "unit_cost": 38000
+        }
+      ]
+    }
+  ],
+  "total_orders": 10000,
+  "completed_orders": 5996,
+  "completed_revenue": 740910750.0,
+  "completed_profit": 194796053.42,
+  "overall_margin_pct": 26.29,
+  "total_quantity": 24215,
+  "date_range": {
+    "min": "2025-01-01",
+    "max": "2025-12-31"
+  },
+  "countries": [
+    "Australia",
+    "Canada",
+    "France",
+    "Germany",
+    "India",
+    "Japan",
+    "UK",
+    "USA"
+  ],
+  "regions": [
+    "Asia",
+    "Europe",
+    "North America",
+    "Oceania"
+  ],
+  "products": [
+    "Desk Lamp",
+    "Ergonomic Chair",
+    "Laptop Air 13",
+    "Laptop Pro 14",
+    "Mechanical Keyboard",
+    "Office Monitor",
+    "Smart Watch",
+    "Smartphone Lite",
+    "Smartphone X",
+    "Tablet Pro",
+    "USB-C Dock",
+    "Wireless Headphones"
+  ],
+  "categories": [
+    "Accessories",
+    "Electronics",
+    "Office"
+  ],
+  "sales_channels": [
+    "Online",
+    "Partner",
+    "Retail"
+  ]
+}
