@@ -282,7 +282,9 @@ def generate_business_insight(
             name = str(r.get(dim, "Unknown"))
             rev = r.get("revenue", 0)
             prof = r.get("profit", 0)
-            margin = r.get("profit_margin", 0)
+            margin = r.get("profit_margin")
+            if margin is None or margin == 0:
+                margin = round((prof / rev * 100.0), 2) if rev > 0 else 0.0
             fmt_rev = format_metric_value(rev, "currency")
             fmt_prof = format_metric_value(prof, "currency")
             fmt_margin = format_metric_value(margin, "percentage")
