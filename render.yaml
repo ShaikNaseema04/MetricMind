@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: metricmind-backend
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: "pip install -r backend/requirements.txt"
+    startCommand: "uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHONPATH
+        value: .
+      - key: METRICMIND_DATA_DIR
+        value: data/raw
+      - key: METRICMIND_DB_PATH
+        value: database/metricmind.db

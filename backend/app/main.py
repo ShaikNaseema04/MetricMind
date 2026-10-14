@@ -2,6 +2,7 @@
 MetricMind — Agentic Semantic BI Engine
 FastAPI Application Entry Point
 """
+import os
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
@@ -39,16 +40,24 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS configuration for Next.js frontend
+# CORS configuration for Next.js frontend (local dev, Vercel deployments, and custom domains)
+default_origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3001",
+]
+custom_origins = [
+    o.strip() for o in settings.dict().get("CORS_ORIGINS", "").split(",") if o.strip()
+] if hasattr(settings, "CORS_ORIGINS") else []
+env_origins = [
+    o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:3001",
-        "http://127.0.0.1:3001",
-        "*"
-    ],
+    allow_origins=list(set(default_origins + custom_origins + env_origins)),
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
